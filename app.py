@@ -48,9 +48,6 @@ if uploaded_file is not None:
         st.write("Preview of uploaded data:")
         st.dataframe(customer_data.head())
         
-        st.write("Preview of encoded data:")
-        st.dataframe(encoded_data.head())
-        
         # Predict outcomes
         st.write("Running predictions...")
         predictions = predict_customer_data(model, encoded_data)
