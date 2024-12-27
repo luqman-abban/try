@@ -2,20 +2,21 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 from tensorflow.keras.models import load_model
+from sklearn.preprocessing import OneHotEncoder
 import joblib
 
-# Load model and encoder
+# Load model
 @st.cache_resource
 def load_resources():
     model = load_model('best_model.h5')
-    encoder = joblib.load('encoder.pkl')  # Load the pre-trained encoder
     return model, encoder
 
 model, encoder = load_resources()
 
 # Helper function for encoding and prediction
 def preprocess_and_predict(model, encoder, customer_data):
-    # Encode the text data
+    
+    encoder = OneHotEncoder(sparse=False, handle_unknown="ignore")
     encoded_data = encoder.transform(customer_data)
     
     # Predict outcomes
