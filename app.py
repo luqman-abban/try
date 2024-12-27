@@ -2,23 +2,17 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 from tensorflow.keras.models import load_model
+from sklearn.preprocessing import OneHotEncoder
 import joblib
 import os
 
 
 @st.cache_resource
 def load_resources():
-    try:
-        model = load_model('best_model.h5')
-        hyperparameters = joblib.load('best_hyperparameters.pkl')
-        return model, hyperparameters
-    except FileNotFoundError:
-        st.error("File not found. Please ensure that 'best_model.h5' and 'best_hyperparameters.pkl' exist in the same directory as your python script.")
-        return None
-    except Exception as e:
-        st.error(f"An error occurred: {e}")
-        return None
-        
+    model = load_model('best_model.h5')
+    hyperparameters = joblib.load('best_hyperparameters.pkl')
+    return model, hyperparameters
+
 model, hyperparameters = load_resources()
 
 # Helper function for prediction
@@ -40,13 +34,14 @@ if uploaded_file is not None:
         # Read uploaded file
         customer_data = pd.read_csv(uploaded_file)
         
-        # One-hot encode object-type columns
-        object_cols = customer_data.select_dtypes(include=['object']).columns
-        encoded_data = pd.get_dummies(customer_data, columns=object_cols)
+        # One-hot encode non-numeric columns
+        categorical_cols = customer_data.select_dtypes(include=['object']).columns
+        encoded_data = pd.get_dummies(customer_data, columns=categorical_cols)
         
         # Ensure data is formatted as expected (optional preprocessing here)
         st.write("Preview of uploaded data:")
         st.dataframe(customer_data.head())
+        
         
         # Predict outcomes
         st.write("Running predictions...")
@@ -73,6 +68,3 @@ if uploaded_file is not None:
         
     except Exception as e:
         st.error(f"An error occurred: {e}")
-
-# Footer
-st.write("This app predicts if a customer will subscribe to bank term deposit or not.")
