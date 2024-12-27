@@ -4,6 +4,16 @@ import numpy as np
 from tensorflow.keras.models import load_model
 from sklearn.preprocessing import OneHotEncoder
 import joblib
+import os
+
+try:
+    if not os.path.exists('best_model.h5'):
+        raise FileNotFoundError("Model file 'best_model.h5' not found in the current directory.")
+    model = load_model('best_model.h5')
+    st.success("Model loaded successfully!")
+except FileNotFoundError as e:
+    st.error(f"Error: {e}")
+    model = None
 
 # Load model
 @st.cache_resource
