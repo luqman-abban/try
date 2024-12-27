@@ -8,10 +8,17 @@ import os
 
 @st.cache_resource
 def load_resources():
-    model = load_model('best_model.h5')
-    hyperparameters = joblib.load('best_hyperparameters.pkl')
-    return model, hyperparameters
-
+    try:
+        model = load_model('best_model.h5')
+        hyperparameters = joblib.load('best_hyperparameters.pkl')
+        return model, hyperparameters
+    except FileNotFoundError:
+        st.error("File not found. Please ensure that 'best_model.h5' and 'best_hyperparameters.pkl' exist in the same directory as your python script.")
+        return None
+    except Exception as e:
+        st.error(f"An error occurred: {e}")
+        return None
+        
 model, hyperparameters = load_resources()
 
 # Helper function for prediction
