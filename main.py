@@ -2,42 +2,28 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 from tensorflow.keras.models import load_model
-from sklearn.preprocessing import OneHotEncoder
 import joblib
 import os
 
-try:
-    if not os.path.exists('best_model.h5'):
-        raise FileNotFoundError("Model file 'best_model.h5' not found in the current directory.")
-    model = load_model('best_model.h5')
-    st.success("Model loaded successfully!")
-except FileNotFoundError as e:
-    st.error(f"Error: {e}")
-    model = None
 
-# Load model
 @st.cache_resource
 def load_resources():
     model = load_model('best_model.h5')
-    return model, encoder
+    hyperparameters = joblib.load('best_hyperparameters.pkl')
+    return model, hyperparameters
 
-model, encoder = load_resources()
+model, hyperparameters = load_resources()
 
-# Helper function for encoding and prediction
-def preprocess_and_predict(model, encoder, customer_data):
-    
-    encoder = OneHotEncoder(sparse=False, handle_unknown="ignore")
-    encoded_data = encoder.transform(customer_data)
-    
-    # Predict outcomes
-    predictions = model.predict(encoded_data)
+# Helper function for prediction
+def predict_customer_data(model, customer_data):
+    predictions = model.predict(customer_data)
     binary_predictions = (predictions >= 0.5).astype(int)
     label_predictions = ["yes" if pred == 1 else "no" for pred in binary_predictions]
     return label_predictions
 
 # Streamlit App
 st.title("Customer Data Prediction App")
-st.write("Upload a CSV file with text data to predict customer outcomes.")
+st.write("Upload a CSV file to predict customer outcomes.")
 
 # File uploader
 uploaded_file = st.file_uploader("Choose a CSV file", type="csv")
@@ -47,23 +33,30 @@ if uploaded_file is not None:
         # Read uploaded file
         customer_data = pd.read_csv(uploaded_file)
         
-        # Ensure data is formatted as expected
+        # One-hot encode object-type columns
+        object_cols = customer_data.select_dtypes(include=['object']).columns
+        encoded_data = pd.get_dummies(customer_data, columns=object_cols)
+        
+        # Ensure data is formatted as expected (optional preprocessing here)
         st.write("Preview of uploaded data:")
         st.dataframe(customer_data.head())
         
-        # Preprocess and predict outcomes
+        st.write("Preview of encoded data:")
+        st.dataframe(encoded_data.head())
+        
+        # Predict outcomes
         st.write("Running predictions...")
-        predictions = preprocess_and_predict(model, encoder, customer_data)
+        predictions = predict_customer_data(model, encoded_data)
         
         # Display predictions
-        prediction_df = customer_data.copy()
-        prediction_df["Prediction"] = predictions
+        prediction_df = pd.DataFrame(predictions, columns=["Prediction"])
+        output_df = pd.concat([customer_data, prediction_df], axis=1)
         st.write("Prediction Results:")
-        st.dataframe(prediction_df)
+        st.dataframe(output_df)
         
         # Save predictions to CSV
         output_file = "predictions.csv"
-        prediction_df.to_csv(output_file, index=False)
+        output_df.to_csv(output_file, index=False)
         
         # Provide download link
         st.download_button(
