@@ -1,14 +1,20 @@
-import streamlit as st
+import gradio as gr
+import pickle
 import pandas as pd
+import joblib
 from tensorflow.keras.models import load_model
+import streamlit as st
 
 # Load your pre-trained model
 try:
-    model = load_model('best_model.h5')
+    model = load_model('/content/best_model.h5')
     model_loaded = True
+    model_columns = model.feature_names_in_ # Access feature names here after successful load
 except Exception as e:
     st.error(f"Error loading the model: {e}")
     model_loaded = False
+    model_columns = [] # Initialize to an empty list if model loading fails
+
 
 # Define the prediction function
 def predict(age, job, marital, education, default, balance, housing, loan, contact, day, month, duration, campaign, pdays, previous, poutcome):
@@ -26,11 +32,15 @@ def predict(age, job, marital, education, default, balance, housing, loan, conta
     ]
     df = pd.DataFrame([data], columns=columns)
     df_processed = pd.get_dummies(df)
-    model_columns = model.feature_names_in_
+
+    # Align processed DataFrame with model input (add missing columns if any)
     for col in model_columns:
         if col not in df_processed:
             df_processed[col] = 0
+
     df_processed = df_processed[model_columns]
+
+    # Predict
     prediction = model.predict(df_processed)[0]
     return "Yes" if prediction == 1 else "No"
 
