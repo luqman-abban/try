@@ -7,12 +7,22 @@ import streamlit as st
 # Load your pre-trained model
 try:
     model = load_model('best_model.h5')
-    model_loaded = True
-    model_columns = model.feature_names_in_ # Access feature names here after successful load
+    model_columns = model.feature_names_in_
+    print("Model loaded successfully.")
+except AttributeError:
+    print("Error: 'Sequential' object has no attribute 'feature_names_in_'.")
+    print("This usually means your model was saved with an older TensorFlow version.")
+    print("Try saving the model with a newer version or use a different method to access the feature names.")
+    # Example of accessing feature names when they're not available in the model attribute:
+    # If your model was saved with an older version, you might have to manually load the feature names
+    # For example, if you stored the feature names in a pickle file during model training
+    #import pickle
+    #with open('feature_names.pkl', 'rb') as f:
+    #  model_columns = pickle.load(f)
+    exit()  # Or handle the error appropriately
 except Exception as e:
-    st.error(f"Error loading the model: {e}")
-    model_loaded = False
-    model_columns = [] # Initialize to an empty list if model loading fails
+    print(f"Error loading the model: {e}")
+    exit()
 
 
 # Define the prediction function
