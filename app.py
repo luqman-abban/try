@@ -1,73 +1,60 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
 from tensorflow.keras.models import load_model
-import os
 
+# Load your pre-trained model
+try:
+    model = load_model('/content/best_model.h5')
+    model_loaded = True
+except Exception as e:
+    st.error(f"Error loading the model: {e}")
+    model_loaded = False
 
-@st.cache_resource
-def load_resources():
-    model = load_model('best_model.h5')
-    return model
+# Define the prediction function
+def predict(age, job, marital, education, default, balance, housing, loan, contact, day, month, duration, campaign, pdays, previous, poutcome):
+    if not model_loaded:
+        return "Model not loaded. Please check the logs."
 
-model = load_resources()
+    columns = [
+        'age', 'job', 'marital', 'education', 'default', 'balance', 'housing',
+        'loan', 'contact', 'day', 'month', 'duration', 'campaign', 'pdays',
+        'previous', 'poutcome'
+    ]
+    data = [
+        age, job, marital, education, default, balance, housing, loan,
+        contact, day, month, duration, campaign, pdays, previous, poutcome
+    ]
+    df = pd.DataFrame([data], columns=columns)
+    df_processed = pd.get_dummies(df)
+    model_columns = model.feature_names_in_
+    for col in model_columns:
+        if col not in df_processed:
+            df_processed[col] = 0
+    df_processed = df_processed[model_columns]
+    prediction = model.predict(df_processed)[0]
+    return "Yes" if prediction == 1 else "No"
 
-# Helper function for prediction
-def predict_customer_data(model, customer_data):
-    # Ensure input data is a NumPy array of type float32
-    customer_data = customer_data.astype(np.float32)
-    predictions = model.predict(customer_data)
-    binary_predictions = (predictions >= 0.5).astype(int)
-    label_predictions = ["yes" if pred == 1 else "no" for pred in binary_predictions]
-    return label_predictions
+# Streamlit app
+st.title("Term Deposit Subscription Prediction")
 
-# Streamlit App
-st.title("Customer Data Prediction App")
-st.write("Upload a CSV file to predict customer outcomes.")
-
-# File uploader
-uploaded_file = st.file_uploader("Choose a CSV file", type="csv")
-
-if uploaded_file is not None:
-    try:
-        # Read uploaded file
-        customer_data = pd.read_csv(uploaded_file)
-
-        # Convert all columns to strings for uniform processing
-        customer_data = customer_data.astype(str)
-
-        # One-hot encode all columns
-        encoded_data = pd.get_dummies(customer_data)
-
-        # Ensure the encoded data matches the model's expected input format
-        st.write("Preview of uploaded and encoded data:")
-        st.dataframe(encoded_data.head())
-
-        # Predict outcomes
-        st.write("Running predictions...")
-        predictions = predict_customer_data(model, encoded_data)
-
-        # Display predictions
-        prediction_df = pd.DataFrame(predictions, columns=["Prediction"])
-        output_df = pd.concat([customer_data, prediction_df], axis=1)
-        st.write("Prediction Results:")
-        st.dataframe(output_df)
-
-        # Save predictions to CSV
-        output_file = "predictions.csv"
-        output_df.to_csv(output_file, index=False)
-
-        # Provide download link
-        st.download_button(
-            label="Download Predictions",
-            data=open(output_file, "rb").read(),
-            file_name="predictions.csv",
-            mime="text/csv",
-        )
-        st.success("Predictions completed and ready for download!")
-
-    except Exception as e:
-        st.error(f"An error occurred: {e}")
-
-# Footer
-st.write("This app predicts if a customer will subscribe to a bank term deposit or not.")
+if model_loaded:
+    age = st.number_input("Age")
+    job = st.selectbox("Job", ['management', 'technician', 'entrepreneur', 'blue-collar', 'unknown', 'retired', 'admin.', 'services', 'self-employed', 'unemployed', 'student', 'housemaid'])
+    marital = st.selectbox("Marital Status", ['married', 'single', 'divorced'])
+    education = st.selectbox("Education", ['primary', 'secondary', 'tertiary', 'unknown'])
+    default = st.selectbox("Default", ['yes', 'no'])
+    balance = st.number_input("Balance")
+    housing = st.selectbox("Housing Loan", ['yes', 'no'])
+    loan = st.selectbox("Personal Loan", ['yes', 'no'])
+    contact = st.selectbox("Contact", ['unknown', 'telephone', 'cellular'])
+    day = st.number_input("Day")
+    month = st.selectbox("Month", ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'])
+    duration = st.number_input("Duration")
+    campaign = st.number_input("Campaign")
+    pdays = st.number_input("Pdays")
+    previous = st.number_input("Previous")
+    poutcome = st.selectbox("Poutcome", ['unknown', 'other', 'failure', 'success'])
+    
+    if st.button("Predict"):
+        prediction = predict(age, job, marital, education, default, balance, housing, loan, contact, day, month, duration, campaign, pdays, previous, poutcome)
+        st.write(f"Subscription Prediction: {prediction}")
