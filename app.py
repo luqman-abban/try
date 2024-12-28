@@ -6,7 +6,7 @@ import streamlit as st
 
 # Load your pre-trained model
 try:
-    model = load_model('/content/best_model.h5')
+    model = load_model('best_model.h5')
     model_loaded = True
     model_columns = model.feature_names_in_ # Access feature names here after successful load
 except Exception as e:
