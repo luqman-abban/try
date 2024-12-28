@@ -1,4 +1,3 @@
-import gradio as gr
 import pickle
 import pandas as pd
 import joblib
