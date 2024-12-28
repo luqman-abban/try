@@ -4,7 +4,7 @@ from tensorflow.keras.models import load_model
 
 # Load your pre-trained model
 try:
-    model = load_model('/content/best_model.h5')
+    model = load_model('best_model.h5')
     model_loaded = True
 except Exception as e:
     st.error(f"Error loading the model: {e}")
